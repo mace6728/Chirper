@@ -26,7 +26,7 @@ Route::view('/login', 'auth.login')
     ->name('login');
 
 Route::post('/login', Login::class)
-    ->middleware('guest');
+    ->middleware(['guest', 'throttle:login']);
 
 // Logout route
 Route::post('/logout', Logout::class)
