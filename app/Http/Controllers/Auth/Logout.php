@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\HTTP\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth;
 
 class Logout extends Controller
 {
@@ -13,10 +13,11 @@ class Logout extends Controller
      */
     public function __invoke(Request $request)
     {
-        $user = $request->user();
+        Auth::logout();
 
-        Auth::logout($user);
-
-        return redirect('/' ->with('success', 'You\'ve successfully logged out!'));
+        // Invalidate session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/')->with('success', 'You\'ve successfully logged out!');
     }
 }

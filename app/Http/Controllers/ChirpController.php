@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 class ChirpController extends Controller
 {
     use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
@@ -63,6 +64,7 @@ class ChirpController extends Controller
     public function edit(Chirp $chirp)
     {
         $this->authorize('update', $chirp);
+
         return view('chirps.edit', compact('chirp'));
     }
 
@@ -98,6 +100,7 @@ class ChirpController extends Controller
         $this->authorize('delete', $chirp);
 
         $chirp->delete();
+
         return redirect('/')->with('success', 'Chirp deleted!');
     }
 }
