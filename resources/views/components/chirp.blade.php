@@ -24,7 +24,7 @@
                     <span class="text-sm font-semibold">{{ $chirp->user ? $chirp->user->name : 'Anonymous' }}</span>
                     <span class="text-base-content/60">·</span>
                     <span class="text-sm text-base-content/60">{{ $chirp->created_at->diffForHumans() }}</span>
-                    @if ($chirp->updated_at->gt($chirp->created_at->addSeconds(5)))
+                    @if ($chirp->updated_at->gt($chirp->created_at->copy()->addSeconds(5)))
                         <span class="text-base-content/60">·</span>
                         <span class="text-sm text-base-content/60 italic">edited</span>
                     @endif
