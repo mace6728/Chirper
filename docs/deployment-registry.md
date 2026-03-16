@@ -19,6 +19,17 @@ On the VM, ensure these are installed:
 - Git
 - A valid Let's Encrypt certificate for `www.sdc-cloud.me` and `sdc-cloud.me`
 - GitHub Actions self-hosted runner service (Linux x64 label)
+- Self-hosted runner service user must have Docker access (typically in `docker` group)
+
+Quick preflight check on VM (as runner user):
+
+```bash
+docker --version
+docker compose version
+id
+```
+
+If the runner user is not in the `docker` group, add it and restart runner service.
 
 Clone the project to `~/Chirper`:
 
