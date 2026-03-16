@@ -12,10 +12,11 @@ services:
         healthcheck:
             test:
                 - CMD-SHELL
-                - php -v >/dev/null 2>&1
+                - php -r '$s=@fsockopen("127.0.0.1",9000); exit($s ? 0 : 1);'
             interval: 10s
             timeout: 5s
             retries: 5
+            start_period: 10s
 
     nginx:
         image: '${DOCKER_USERNAME}/chirper-nginx:${IMAGE_TAG:-latest}'
