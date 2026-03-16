@@ -59,7 +59,8 @@ jobs:
   deploy:
     needs: [build-and-push]
     if: |
-      always() &&
+      !failure() &&
+      !cancelled() &&
       (
         github.event_name == 'workflow_dispatch' ||
         needs.build-and-push.result == 'success'
