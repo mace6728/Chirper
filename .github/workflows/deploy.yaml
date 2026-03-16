@@ -139,6 +139,7 @@ jobs:
               echo "Smoke test failed after $max_attempts attempts"
               docker compose --env-file .env.production -f compose.prod.yaml ps
               docker compose --env-file .env.production -f compose.prod.yaml logs --tail=80 app nginx
+              docker compose --env-file .env.production -f compose.prod.yaml exec -T app sh -lc 'tail -n 120 storage/logs/laravel.log || true'
               exit 1
             fi
 
