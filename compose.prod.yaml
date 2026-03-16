@@ -1,0 +1,56 @@
+services:
+    app:
+        image: '${DOCKER_USERNAME}/chirper-app:${IMAGE_TAG:-latest}'
+        restart: unless-stopped
+        env_file:
+            - .env.production
+        networks:
+            - sail
+        depends_on:
+            pgsql:
+                condition: service_healthy
+
+    nginx:
+        image: '${DOCKER_USERNAME}/chirper-nginx:${IMAGE_TAG:-latest}'
+        restart: unless-stopped
+        ports:
+            - '80:80'
+            - '443:443'
+        volumes:
+            - '/etc/letsencrypt:/etc/ssl/letsencrypt:ro'
+        networks:
+            - sail
+        depends_on:
+            - app
+
+    pgsql:
+        image: 'postgres:18-alpine'
+        restart: unless-stopped
+        environment:
+            PGPASSWORD: '${DB_PASSWORD:-secret}'
+            POSTGRES_DB: '${DB_DATABASE}'
+            POSTGRES_USER: '${DB_USERNAME}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+        volumes:
+            - 'sail-pgsql:/var/lib/postgresql/data'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - pg_isready
+                - '-q'
+                - '-d'
+                - '${DB_DATABASE}'
+                - '-U'
+                - '${DB_USERNAME}'
+            retries: 3
+            timeout: 5s
+
+networks:
+    sail:
+        driver: bridge
+
+volumes:
+    sail-pgsql:
+        driver: local
