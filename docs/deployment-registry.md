@@ -28,16 +28,16 @@ cd ~/Chirper
 ```
 
 Create and configure a dedicated production env file at `~/Chirper/.env.production`.
+Set all required production variables directly in that file.
 
-Recommended quick start on VM:
+For manual local compose commands on VM, export image coordinates first:
 
 ```bash
-cd ~/Chirper
-cp .env.production.example .env.production
+export DOCKER_USERNAME=<your-dockerhub-username>
+export IMAGE_TAG=<immutable-tag-or-sha>
 ```
 
-Then set all `REPLACE_WITH_*` placeholders.
-Set `IMAGE_TAG` to an immutable value (for example a commit SHA), not `latest`.
+In CI deploy runs, these two variables are injected by the workflow automatically.
 Generate your app key with:
 
 ```bash
@@ -59,6 +59,7 @@ At minimum:
 - `DB_PASSWORD=<your-db-password>`
 - `SESSION_DRIVER=database`
 - `CACHE_STORE=database`
+- `APP_URL=https://sdc-cloud.me`
 
 ## 3. CI/CD behavior
 
@@ -85,6 +86,7 @@ The workflow will pull that tag and redeploy.
 - `compose.yaml` remains for local development.
 - `compose.prod.yaml` is for VM deployment only.
 - VM deployment reads environment variables from `.env.production`.
+- CI injects `DOCKER_USERNAME` and `IMAGE_TAG` at runtime; keep `.env.production` focused on app/database/runtime settings.
 - `compose.prod.yaml` maps `80:80` and `443:443` for HTTP + HTTPS.
 - TLS certs are mounted from VM `/etc/letsencrypt` to container `/etc/ssl/letsencrypt` (read-only).
 - Development Nginx uses `docker/nginx/default.conf` (HTTP only); production image uses `docker/nginx/default.prod.conf` (TLS + redirect).

@@ -1,8 +1,5 @@
 name: Build and Deploy
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
     branches: ["main"]
@@ -25,19 +22,19 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push App image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/app/Dockerfile.prod
@@ -47,7 +44,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/chirper-app:latest
 
       - name: Build and push Nginx image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/nginx/Dockerfile.prod
@@ -89,7 +86,16 @@ jobs:
           }
           trap on_error ERR
 
+          cleanup() {
+            docker logout >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
           cd ~/Chirper
+
+          # Keep deploy assets in sync with the workflow run revision.
+          git fetch --all --prune
+          git checkout --force "${GITHUB_SHA}"
 
           # Ensure Compose uses workflow-provided image coordinates instead of file defaults.
           export DOCKER_USERNAME IMAGE_TAG
@@ -102,23 +108,30 @@ jobs:
 
           docker compose --env-file .env.production -f compose.prod.yaml exec -T app php artisan migrate --force
 
-          # Smoke test: verify the homepage returns HTTP 200 after deployment.
+          # Smoke test: verify HTTPS endpoint from APP_URL and force local resolution.
+          APP_URL="$(grep -E '^APP_URL=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
+          if [ -z "$APP_URL" ]; then
+            echo "Smoke test failed: APP_URL is not set in .env.production"
+            exit 1
+          fi
+
+          APP_HOST="$(printf '%s' "$APP_URL" | sed -E 's#^https?://([^/]+).*$#\1#')"
+          if [ -z "$APP_HOST" ]; then
+            echo "Smoke test failed: cannot parse host from APP_URL=$APP_URL"
+            exit 1
+          fi
+
+          if ! command -v curl >/dev/null 2>&1; then
+            echo "Smoke test failed: curl is required on the self-hosted runner"
+            exit 1
+          fi
+
           attempt=1
           max_attempts=10
           while [ "$attempt" -le "$max_attempts" ]; do
-            if command -v curl >/dev/null 2>&1; then
-              if curl -fsS -o /dev/null http://127.0.0.1/; then
-                echo "Smoke test passed on attempt $attempt"
-                break
-              fi
-            elif command -v wget >/dev/null 2>&1; then
-              if wget -q -O /dev/null http://127.0.0.1/; then
-                echo "Smoke test passed on attempt $attempt"
-                break
-              fi
-            else
-              echo "Smoke test failed: neither curl nor wget is available on runner VM"
-              exit 1
+            if curl -fsS --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/"; then
+              echo "Smoke test passed on attempt $attempt"
+              break
             fi
 
             if [ "$attempt" -eq "$max_attempts" ]; then
