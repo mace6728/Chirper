@@ -49,7 +49,7 @@ Prefer `composer run dev` over manually running multiple processes.
 - In production, `APP_ENV=production` and `APP_DEBUG=false` must be set in VM `.env`.
 - Run migrations before relying on database-backed sessions/cache.
 - If UI changes do not appear, run `npm run dev` or rebuild with `npm run build`.
-- Nginx production domain is currently configured in `docker/nginx/default.conf`; adjust for new domains.
+- Nginx production domain is currently configured in `docker/nginx/default.prod.conf`; adjust for new domains.
 - `compose.prod.yaml` expects pre-built registry images and DB health checks.
 
 ## Deployment Notes
