@@ -4,7 +4,7 @@
 	"dockerComposeFile": [
 		"../compose.yaml"
 	],
-	"service": "laravel.test",
+	"service": "app",
 	"workspaceFolder": "/var/www/html",
 	"customizations": {
 		"vscode": {
@@ -19,7 +19,12 @@
 			"settings": {}
 		}
 	},
-	"remoteUser": "sail",
+	"remoteUser": "app",
+	"containerEnv": {
+		"HOME": "/home/app"
+	},
+	"updateRemoteUserUID": true,
+
 	"postCreateCommand": "chown -R 1000:1000 /var/www/html 2>/dev/null || true"
 	// "forwardPorts": [],
 	// "runServices": [],
