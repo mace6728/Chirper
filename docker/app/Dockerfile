@@ -29,4 +29,6 @@ ENV HOME=/home/app
 
 WORKDIR /var/www/html
 
+USER app
+
 EXPOSE 9000

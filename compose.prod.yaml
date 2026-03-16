@@ -15,6 +15,9 @@ services:
         restart: unless-stopped
         ports:
             - '80:80'
+            - '443:443'
+        volumes:
+            - '/etc/letsencrypt:/etc/ssl/letsencrypt:ro'
         networks:
             - sail
         depends_on:
@@ -29,7 +32,7 @@ services:
             POSTGRES_USER: '${DB_USERNAME}'
             POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
         volumes:
-            - 'sail-pgsql:/var/lib/postgresql'
+            - 'sail-pgsql:/var/lib/postgresql/data'
         networks:
             - sail
         healthcheck:

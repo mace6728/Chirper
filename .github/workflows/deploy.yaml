@@ -84,6 +84,12 @@ jobs:
           envs: DOCKER_USERNAME,IMAGE_TAG
           script: |
             set -euo pipefail
+
+            on_error() {
+              echo "Deployment failed. To rollback, rerun this workflow with workflow_dispatch and image_tag=<previous_sha>."
+            }
+            trap on_error ERR
+
             cd ~/Chirper
 
             docker compose --env-file .env.production -f compose.prod.yaml pull app nginx
