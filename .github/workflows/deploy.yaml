@@ -93,6 +93,10 @@ jobs:
 
             cd ~/Chirper
 
+            # Ensure Docker Compose uses the tag and username passed from the workflow,
+            # rather than any placeholder values from .env.production.
+            export DOCKER_USERNAME IMAGE_TAG
+
             docker compose --env-file .env.production -f compose.prod.yaml pull app nginx
             docker compose --env-file .env.production -f compose.prod.yaml up -d pgsql
             docker compose --env-file .env.production -f compose.prod.yaml up -d app nginx
