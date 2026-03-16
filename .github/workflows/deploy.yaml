@@ -86,11 +86,41 @@ jobs:
             set -euo pipefail
             cd ~/Chirper
 
-            docker compose -f compose.prod.yaml pull app nginx
-            docker compose -f compose.prod.yaml up -d pgsql
-            docker compose -f compose.prod.yaml up -d app nginx
+            docker compose --env-file .env.production -f compose.prod.yaml pull app nginx
+            docker compose --env-file .env.production -f compose.prod.yaml up -d pgsql
+            docker compose --env-file .env.production -f compose.prod.yaml up -d app nginx
 
-            docker compose -f compose.prod.yaml exec -T app php artisan migrate --force
+            docker compose --env-file .env.production -f compose.prod.yaml exec -T app php artisan migrate --force
 
-            docker compose -f compose.prod.yaml ps
+            # Smoke test: verify the homepage returns HTTP 200 after deployment.
+            attempt=1
+            max_attempts=10
+            while [ "$attempt" -le "$max_attempts" ]; do
+              if command -v curl >/dev/null 2>&1; then
+                if curl -fsS -o /dev/null http://127.0.0.1/; then
+                  echo "Smoke test passed on attempt $attempt"
+                  break
+                fi
+              elif command -v wget >/dev/null 2>&1; then
+                if wget -q -O /dev/null http://127.0.0.1/; then
+                  echo "Smoke test passed on attempt $attempt"
+                  break
+                fi
+              else
+                echo "Smoke test failed: neither curl nor wget is available on VM"
+                exit 1
+              fi
+
+              if [ "$attempt" -eq "$max_attempts" ]; then
+                echo "Smoke test failed after $max_attempts attempts"
+                docker compose --env-file .env.production -f compose.prod.yaml ps
+                docker compose --env-file .env.production -f compose.prod.yaml logs --tail=80 app nginx
+                exit 1
+              fi
+
+              attempt=$((attempt + 1))
+              sleep 3
+            done
+
+            docker compose --env-file .env.production -f compose.prod.yaml ps
             docker image prune -f

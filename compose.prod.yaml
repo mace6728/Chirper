@@ -3,7 +3,7 @@ services:
         image: '${DOCKER_USERNAME}/chirper-app:${IMAGE_TAG:-latest}'
         restart: unless-stopped
         env_file:
-            - .env
+            - .env.production
         networks:
             - sail
         depends_on:

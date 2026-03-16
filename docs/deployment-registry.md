@@ -26,7 +26,24 @@ git clone <your-repo-url> ~/Chirper
 cd ~/Chirper
 ```
 
-Create and configure `.env` for production in `~/Chirper/.env`.
+Create and configure a dedicated production env file at `~/Chirper/.env.production`.
+
+Recommended quick start on VM:
+
+```bash
+cd ~/Chirper
+cp .env.production.example .env.production
+```
+
+Then set all `REPLACE_WITH_*` placeholders.
+Generate your app key with:
+
+```bash
+docker compose --env-file .env.production -f compose.prod.yaml run --rm app php artisan key:generate --show
+```
+
+Copy the output to `APP_KEY=` in `.env.production`.
+
 At minimum:
 
 - `APP_ENV=production`
@@ -48,7 +65,7 @@ Workflow file: `.github/workflows/deploy.yaml`
 - On push to `main`:
   - Build app and nginx images using production Dockerfiles.
   - Push tags: `latest` and `${GITHUB_SHA}`.
-  - Deploy `${GITHUB_SHA}` to VM with `compose.prod.yaml`.
+  - Deploy `${GITHUB_SHA}` to VM with `compose.prod.yaml` and `--env-file .env.production`.
   - Run `php artisan migrate --force`.
 - Manual deploy (`workflow_dispatch`):
   - Deploy any tag by setting `image_tag` (for rollback/redeploy).
@@ -65,4 +82,5 @@ The workflow will pull that tag and redeploy.
 
 - `compose.yaml` remains for local development.
 - `compose.prod.yaml` is for VM deployment only.
+- VM deployment reads environment variables from `.env.production`.
 - Current setup assumes public Docker Hub repositories.
