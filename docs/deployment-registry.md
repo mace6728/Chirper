@@ -8,9 +8,8 @@ Add the following repository secrets:
 
 - `DOCKER_USERNAME`: Docker Hub username
 - `DOCKER_PASSWORD`: Docker Hub access token/password
-- `VM_IP`: Deployment VM public IP
-- `VM_USER`: SSH user on VM
-- `VM_SSH_KEY`: Private key content for SSH
+
+This deployment flow assumes the `deploy` job runs on a self-hosted runner installed on your VM.
 
 ## 2. VM prerequisites
 
@@ -19,6 +18,7 @@ On the VM, ensure these are installed:
 - Docker Engine + Docker Compose v2
 - Git
 - A valid Let's Encrypt certificate for `www.sdc-cloud.me` and `sdc-cloud.me`
+- GitHub Actions self-hosted runner service (Linux x64 label)
 
 Clone the project to `~/Chirper`:
 
@@ -67,7 +67,7 @@ Workflow file: `.github/workflows/deploy.yaml`
 - On push to `main`:
   - Build app and nginx images using production Dockerfiles.
   - Push tags: `latest` and `${GITHUB_SHA}`.
-  - Deploy `${GITHUB_SHA}` to VM with `compose.prod.yaml` and `--env-file .env.production`.
+  - Deploy `${GITHUB_SHA}` directly on self-hosted VM runner with `compose.prod.yaml` and `--env-file .env.production`.
   - Run `php artisan migrate --force`.
 - Manual deploy (`workflow_dispatch`):
   - Deploy any tag by setting `image_tag` (for rollback/redeploy).
