@@ -19,7 +19,6 @@ services:
         build:
             context: .
             dockerfile: docker/nginx/Dockerfile
-        image: nginx:stable-alpine
         ports:
             - '80:80'
         volumes:
