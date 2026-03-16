@@ -9,6 +9,13 @@ services:
         depends_on:
             pgsql:
                 condition: service_healthy
+        healthcheck:
+            test:
+                - CMD-SHELL
+                - php -v >/dev/null 2>&1
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     nginx:
         image: '${DOCKER_USERNAME}/chirper-nginx:${IMAGE_TAG:-latest}'
@@ -21,7 +28,8 @@ services:
         networks:
             - sail
         depends_on:
-            - app
+            app:
+                condition: service_healthy
 
     pgsql:
         image: 'postgres:18-alpine'
