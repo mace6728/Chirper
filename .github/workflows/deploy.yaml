@@ -43,6 +43,10 @@ jobs:
           if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
             APP_CHANGED=true
             NGINX_CHANGED=true
+          elif ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            # BEFORE commit is not reachable (e.g., force-push) - rebuild everything
+            APP_CHANGED=true
+            NGINX_CHANGED=true
           else
             CHANGED_FILES="$(git diff --name-only "$BEFORE" "$AFTER")"
 
