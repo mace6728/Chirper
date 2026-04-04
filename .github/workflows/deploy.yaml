@@ -20,20 +20,81 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      app_changed: ${{ steps.detect-changes.outputs.app_changed }}
+      nginx_changed: ${{ steps.detect-changes.outputs.nginx_changed }}
+      any_image_built: ${{ steps.detect-changes.outputs.any_image_built }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed deployment components
+        id: detect-changes
+        run: |
+          set -euo pipefail
+
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+          APP_CHANGED=false
+          NGINX_CHANGED=false
+
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            APP_CHANGED=true
+            NGINX_CHANGED=true
+          else
+            CHANGED_FILES="$(git diff --name-only "$BEFORE" "$AFTER")"
+
+            if [ -n "$CHANGED_FILES" ]; then
+              while IFS= read -r file; do
+                [ -z "$file" ] && continue
+
+                case "$file" in
+                  docs/*|README.md|*.md)
+                    ;;
+                  docker/nginx/*)
+                    NGINX_CHANGED=true
+                    ;;
+                  public/*)
+                    APP_CHANGED=true
+                    NGINX_CHANGED=true
+                    ;;
+                  docker/app/*|app/*|bootstrap/*|config/*|database/*|resources/*|routes/*|composer.json|composer.lock|artisan|phpunit.xml)
+                    APP_CHANGED=true
+                    ;;
+                  *)
+                    # Safe fallback for uncategorized changes.
+                    APP_CHANGED=true
+                    NGINX_CHANGED=true
+                    ;;
+                esac
+              done <<< "$CHANGED_FILES"
+            fi
+          fi
+
+          ANY_IMAGE_BUILT=false
+          if [ "$APP_CHANGED" = "true" ] || [ "$NGINX_CHANGED" = "true" ]; then
+            ANY_IMAGE_BUILT=true
+          fi
+
+          echo "app_changed=$APP_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "nginx_changed=$NGINX_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "any_image_built=$ANY_IMAGE_BUILT" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
+        if: steps.detect-changes.outputs.any_image_built == 'true'
         uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
+        if: steps.detect-changes.outputs.any_image_built == 'true'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push App image
+        if: steps.detect-changes.outputs.app_changed == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -44,6 +105,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/chirper-app:latest
 
       - name: Build and push Nginx image
+        if: steps.detect-changes.outputs.nginx_changed == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -53,6 +115,28 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/chirper-nginx:${{ github.sha }}
             ${{ secrets.DOCKER_USERNAME }}/chirper-nginx:latest
 
+      - name: Re-tag unchanged App image with current SHA
+        if: steps.detect-changes.outputs.app_changed != 'true' && steps.detect-changes.outputs.nginx_changed == 'true'
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          docker buildx imagetools create \
+            --tag "${DOCKER_USERNAME}/chirper-app:${GITHUB_SHA}" \
+            "${DOCKER_USERNAME}/chirper-app:latest"
+
+      - name: Re-tag unchanged Nginx image with current SHA
+        if: steps.detect-changes.outputs.app_changed == 'true' && steps.detect-changes.outputs.nginx_changed != 'true'
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          docker buildx imagetools create \
+            --tag "${DOCKER_USERNAME}/chirper-nginx:${GITHUB_SHA}" \
+            "${DOCKER_USERNAME}/chirper-nginx:latest"
+
+      - name: Skip image build for docs-only changes
+        if: steps.detect-changes.outputs.any_image_built != 'true'
+        run: echo "No deployment image changes detected; skipping image build."
+
   deploy:
     needs: [build-and-push]
     if: |
@@ -60,7 +144,10 @@ jobs:
       !cancelled() &&
       (
         github.event_name == 'workflow_dispatch' ||
-        needs.build-and-push.result == 'success'
+        (
+          needs.build-and-push.result == 'success' &&
+          needs.build-and-push.outputs.any_image_built == 'true'
+        )
       )
     runs-on: [self-hosted, linux, x64]
     steps:
@@ -93,21 +180,43 @@ jobs:
 
           cd ~/Chirper
 
-          # Keep deploy assets in sync with the workflow run revision.
-          git fetch --all --prune
-          git checkout --force "${GITHUB_SHA}"
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "Deploy failed: docker command is not available on this runner"
+            exit 1
+          fi
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Deploy failed: docker compose is not available on this runner"
+            exit 1
+          fi
+
+          if [ ! -f compose.prod.yaml ]; then
+            echo "Deploy failed: compose.prod.yaml not found in ~/Chirper"
+            exit 1
+          fi
+
+          if [ ! -f .env.production ]; then
+            echo "Deploy failed: .env.production not found in ~/Chirper"
+            exit 1
+          fi
+
+          compose_prod() {
+            docker compose --env-file .env.production -f compose.prod.yaml "$@"
+          }
 
           # Ensure Compose uses workflow-provided image coordinates instead of file defaults.
           export DOCKER_USERNAME IMAGE_TAG
 
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-          docker compose --env-file .env.production -f compose.prod.yaml pull app nginx
-          docker compose --env-file .env.production -f compose.prod.yaml up -d pgsql
-          docker compose --env-file .env.production -f compose.prod.yaml up -d app
-          docker compose --env-file .env.production -f compose.prod.yaml up -d nginx
+          compose_prod pull app nginx
+          compose_prod up -d pgsql
+          compose_prod up -d app
+          compose_prod up -d nginx
 
-          docker compose --env-file .env.production -f compose.prod.yaml exec -T app php artisan migrate --force
+          compose_prod exec -T app php artisan migrate:status --no-interaction
+          compose_prod exec -T app php artisan migrate --pretend --no-interaction
+          compose_prod exec -T app php artisan migrate --force --no-interaction
 
           # Smoke test: verify HTTPS endpoint from APP_URL and force local resolution.
           APP_URL="$(grep -E '^APP_URL=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
@@ -137,9 +246,9 @@ jobs:
 
             if [ "$attempt" -eq "$max_attempts" ]; then
               echo "Smoke test failed after $max_attempts attempts"
-              docker compose --env-file .env.production -f compose.prod.yaml ps
-              docker compose --env-file .env.production -f compose.prod.yaml logs --tail=80 app nginx
-              docker compose --env-file .env.production -f compose.prod.yaml exec -T app sh -lc 'tail -n 120 storage/logs/laravel.log || true'
+              compose_prod ps
+              compose_prod logs --tail=80 app nginx
+              compose_prod exec -T app sh -lc 'tail -n 120 storage/logs/laravel.log || true'
               exit 1
             fi
 
@@ -147,5 +256,5 @@ jobs:
             sleep 3
           done
 
-          docker compose --env-file .env.production -f compose.prod.yaml ps
+          compose_prod ps
           docker image prune -f
