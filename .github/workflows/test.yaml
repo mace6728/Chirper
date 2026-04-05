@@ -26,6 +26,24 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
+      - name: Prepare environment
+        run: |
+          if [ ! -f .env ]; then
+            {
+              echo 'APP_NAME=Chirper'
+              echo 'APP_ENV=testing'
+              echo 'APP_KEY='
+              echo 'APP_DEBUG=true'
+              echo 'APP_URL=http://localhost'
+              echo 'DB_CONNECTION=sqlite'
+              echo 'DB_DATABASE=:memory:'
+              echo 'CACHE_STORE=array'
+              echo 'SESSION_DRIVER=array'
+              echo 'QUEUE_CONNECTION=sync'
+              echo 'MAIL_MAILER=array'
+            } > .env
+          fi
+
       - name: Generate app key
         run: php artisan key:generate --ansi
 
