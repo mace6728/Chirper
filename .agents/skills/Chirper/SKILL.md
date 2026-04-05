@@ -4,82 +4,74 @@
 > Auto-generated skill from repository analysis
 
 ## Overview
-This skill teaches you the core development patterns and workflows used in the Chirper TypeScript codebase. You'll learn the project's coding conventions, how to contribute using conventional commits, how to manage CI/CD workflows, and how to write and run tests. No framework is used, so patterns are straightforward and easy to follow.
+This skill teaches the development patterns and conventions used in the Chirper TypeScript codebase. While Chirper does not use a specific framework, it adheres to clear coding standards for file naming, imports, exports, commit messages, and testing. This guide will help you contribute code that matches the project's established style and workflows.
 
 ## Coding Conventions
 
 ### File Naming
-- **PascalCase** is used for file names.
-  - Example: `UserProfile.ts`, `PostList.ts`
+- Use **PascalCase** for file names.
+  - Example: `UserProfile.ts`, `ChirpList.ts`
 
 ### Import Style
-- **Relative imports** are preferred.
+- Use **relative imports** for modules within the codebase.
   - Example:
     ```typescript
-    import { User } from './User';
-    import { PostList } from '../components/PostList';
+    import { Chirp } from './Chirp';
     ```
 
 ### Export Style
-- **Named exports** are used throughout the codebase.
+- Use **named exports** instead of default exports.
   - Example:
     ```typescript
-    // UserProfile.ts
-    export function UserProfile(props: UserProfileProps) { ... }
+    // In Chirp.ts
+    export interface Chirp { ... }
+
+    // In another file
+    import { Chirp } from './Chirp';
     ```
 
 ### Commit Messages
-- **Conventional commit** format is enforced.
-- Common prefixes:
-  - `feat:` for new features
-  - `ci:` for continuous integration or deployment changes
-- Example:
-  ```
-  ci: update test workflow to use Node 18
-  feat: add user mention parsing to posts
-  ```
+- Follow **conventional commit** format.
+- Use prefixes such as `ci` for continuous integration related changes.
+- Keep commit messages concise (average ~62 characters).
+  - Example:
+    ```
+    ci: update build pipeline for Node 18 compatibility
+    ```
 
 ## Workflows
 
-### CI Workflow Update
-**Trigger:** When you need to modify or optimize CI/CD processes (e.g., deployment, test running).  
-**Command:** `/update-ci`
+### Continuous Integration Updates
+**Trigger:** When updating CI/CD configuration or dependencies.
+**Command:** `/ci-update`
 
-1. Edit or optimize YAML files in `.github/workflows/` as needed.
-   - Example: Update Node.js version in `test.yaml`
-2. Update the Dockerfile or related deployment configuration if required.
-   - Example: Edit `docker/app/Dockerfile.prod` to change the base image.
-3. Commit your changes with a `ci:` prefix in the commit message.
-   - Example:
-     ```
-     ci: switch to multi-stage Docker build for production
-     ```
-4. Push your changes and create a pull request.
-
-**Files involved:**
-- `.github/workflows/deploy.yaml`
-- `.github/workflows/test.yaml`
-- `docker/app/Dockerfile.prod`
+1. Make necessary changes to CI/CD configuration files.
+2. Commit changes using the `ci:` prefix in the commit message.
+   - Example: `ci: update GitHub Actions workflow for Node 18`
+3. Push your branch and open a pull request for review.
 
 ## Testing Patterns
 
-- **Test files** use the pattern `*.test.ts`.
-- **Testing framework** is not specified, but tests are written in TypeScript.
-- Example test file:
-  ```typescript
-  // UserProfile.test.ts
-  import { UserProfile } from './UserProfile';
+- Test files use the `.test.ts` suffix.
+  - Example: `Chirp.test.ts`
+- The testing framework is not specified; follow existing patterns in test files.
+- Place test files alongside the code they test or in a dedicated `tests` directory if present.
 
-  describe('UserProfile', () => {
-    it('renders user name', () => {
-      // test implementation
+  Example test file:
+  ```typescript
+  // Chirp.test.ts
+  import { Chirp } from './Chirp';
+
+  describe('Chirp', () => {
+    it('should create a chirp with text', () => {
+      const chirp: Chirp = { text: 'Hello world!' };
+      expect(chirp.text).toBe('Hello world!');
     });
   });
   ```
 
 ## Commands
-
-| Command     | Purpose                                               |
-|-------------|-------------------------------------------------------|
-| /update-ci  | Update CI/CD workflows and deployment configuration   |
+| Command      | Purpose                                              |
+|--------------|------------------------------------------------------|
+| /ci-update   | Guide for updating CI/CD configuration and workflows |
 ```
