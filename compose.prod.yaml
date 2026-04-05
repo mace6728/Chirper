@@ -42,16 +42,11 @@ services:
         networks:
             - sail
         healthcheck:
-            test:
-                - CMD
-                - pg_isready
-                - '-q'
-                - '-d'
-                - '${DB_DATABASE}'
-                - '-U'
-                - '${DB_USERNAME}'
-            retries: 3
+            test: ['CMD-SHELL', 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1" > /dev/null 2>&1']
+            interval: 5s
+            retries: 10
             timeout: 5s
+            start_period: 10s
 
 networks:
     sail:
