@@ -32,9 +32,15 @@ id
 
 If the runner user is not in the `docker` group, add it and restart runner service.
 
-The deploy job checks out the repository into `GITHUB_WORKSPACE` during each run, so CI deploy no longer depends on a pre-existing `~/Chirper` directory.
+Clone the project to `~/Chirper`:
 
-Store the full production environment file as the `ENV_PRODUCTION` secret. The workflow writes it to `.env.production` at runtime and applies restrictive permissions.
+```bash
+git clone <your-repo-url> ~/Chirper
+cd ~/Chirper
+```
+
+Create and configure a dedicated production env file at `~/Chirper/.env.production`.
+Set all required production variables directly in that file.
 
 For manual local compose commands on VM, export image coordinates first:
 
@@ -100,4 +106,3 @@ The workflow will pull that tag and redeploy.
 - TLS certs are mounted from VM `/etc/letsencrypt` to container `/etc/ssl/letsencrypt` (read-only).
 - Development Nginx uses `docker/nginx/default.conf` (HTTP only); production image uses `docker/nginx/default.prod.conf` (TLS + redirect).
 - Current setup assumes public Docker Hub repositories.
-- Smoke test is HTTPS-only and resolves `APP_URL` host to `127.0.0.1:443`; ensure cert files are present and valid on the runner host.

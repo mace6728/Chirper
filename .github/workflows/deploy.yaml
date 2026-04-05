@@ -218,6 +218,14 @@ jobs:
 
           ( umask 177 && printf '%s\n' "$ENV_PRODUCTION" > "$GITHUB_WORKSPACE/.env.production" )
 
+          required_env_keys=(APP_KEY APP_URL DB_DATABASE DB_USERNAME DB_PASSWORD)
+          for key in "${required_env_keys[@]}"; do
+            if ! grep -qE "^${key}=.+" "$GITHUB_WORKSPACE/.env.production"; then
+              echo "Deploy failed: ${key} is missing from ENV_PRODUCTION secret"
+              exit 1
+            fi
+          done
+
       - name: Deploy on self-hosted runner
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -270,6 +278,23 @@ jobs:
 
           compose_prod pull app nginx
           compose_prod up -d pgsql
+
+          DB_USERNAME="$(grep -E '^DB_USERNAME=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
+          DB_PASSWORD="$(grep -E '^DB_PASSWORD=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
+
+          if [ -z "$DB_USERNAME" ] || [ -z "$DB_PASSWORD" ]; then
+            echo "Deploy failed: DB_USERNAME or DB_PASSWORD is empty in .env.production"
+            exit 1
+          fi
+
+          # Keep DB credentials in sync when pgsql data volume already exists.
+          DB_PASSWORD_ESCAPED="$(printf '%s' "$DB_PASSWORD" | sed "s/'/''/g")"
+          compose_prod exec -T -u postgres pgsql psql \
+            -v ON_ERROR_STOP=1 \
+            -U postgres \
+            -d postgres \
+            -c "ALTER ROLE \"$DB_USERNAME\" WITH PASSWORD '$DB_PASSWORD_ESCAPED';"
+
           compose_prod up -d app
           compose_prod up -d nginx
 
