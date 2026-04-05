@@ -153,6 +153,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
 
       - name: Resolve deploy image tag
         id: resolve-tag
@@ -167,8 +170,14 @@ jobs:
         env:
           ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
         run: |
-          printf '%s\n' "$ENV_PRODUCTION" > "$GITHUB_WORKSPACE/.env.production"
-          chmod 600 "$GITHUB_WORKSPACE/.env.production"
+          set -euo pipefail
+
+          if [ -z "${ENV_PRODUCTION}" ]; then
+            echo "ENV_PRODUCTION secret is required and must not be empty." >&2
+            exit 1
+          fi
+
+          ( umask 177 && printf '%s\n' "$ENV_PRODUCTION" > "$GITHUB_WORKSPACE/.env.production" )
 
       - name: Deploy on self-hosted runner
         env:
@@ -185,6 +194,7 @@ jobs:
 
           cleanup() {
             docker logout >/dev/null 2>&1 || true
+            rm -f "${GITHUB_WORKSPACE}/.env.production"
           }
           trap cleanup EXIT
 
@@ -250,8 +260,8 @@ jobs:
           attempt=1
           max_attempts=10
           while [ "$attempt" -le "$max_attempts" ]; do
-            if curl -fsS --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" || \
-               curl -fsS --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"; then
+            if curl -fsS --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" || \
+               curl -fsS --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"; then
               echo "Smoke test passed on attempt $attempt"
               break
             fi
@@ -259,8 +269,8 @@ jobs:
             if [ "$attempt" -eq "$max_attempts" ]; then
               echo "Smoke test failed after $max_attempts attempts"
               echo "--- curl diagnostics ---"
-              curl -v --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" 2>&1 || true
-              curl -v --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"  2>&1 || true
+              curl -v --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" 2>&1 || true
+              curl -v --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"  2>&1 || true
               echo "--- compose status ---"
               compose_prod ps
               compose_prod logs --tail=80 app nginx
