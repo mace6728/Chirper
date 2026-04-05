@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Chirp;
 use Illuminate\Database\Seeder;
 
 class ChirpSeeder extends Seeder
