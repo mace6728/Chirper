@@ -245,7 +245,7 @@ jobs:
           }
           trap cleanup EXIT
 
-          cd ~/Chirper
+          cd "${GITHUB_WORKSPACE}"
 
           if ! command -v docker >/dev/null 2>&1; then
             echo "Deploy failed: docker command is not available on this runner"
@@ -258,12 +258,12 @@ jobs:
           fi
 
           if [ ! -f compose.prod.yaml ]; then
-            echo "Deploy failed: compose.prod.yaml not found in ~/Chirper"
+            echo "Deploy failed: compose.prod.yaml not found in ${GITHUB_WORKSPACE}"
             exit 1
           fi
 
           if [ ! -f .env.production ]; then
-            echo "Deploy failed: .env.production not found in ~/Chirper"
+            echo "Deploy failed: .env.production not found in ${GITHUB_WORKSPACE}"
             exit 1
           fi
 
@@ -279,20 +279,21 @@ jobs:
           compose_prod pull app nginx
           compose_prod up -d pgsql
 
+          DB_DATABASE="$(grep -E '^DB_DATABASE=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
           DB_USERNAME="$(grep -E '^DB_USERNAME=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
           DB_PASSWORD="$(grep -E '^DB_PASSWORD=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
 
-          if [ -z "$DB_USERNAME" ] || [ -z "$DB_PASSWORD" ]; then
-            echo "Deploy failed: DB_USERNAME or DB_PASSWORD is empty in .env.production"
+          if [ -z "$DB_DATABASE" ] || [ -z "$DB_USERNAME" ] || [ -z "$DB_PASSWORD" ]; then
+            echo "Deploy failed: DB_DATABASE, DB_USERNAME, or DB_PASSWORD is empty in .env.production"
             exit 1
           fi
 
           # Keep DB credentials in sync when pgsql data volume already exists.
           DB_PASSWORD_ESCAPED="$(printf '%s' "$DB_PASSWORD" | sed "s/'/''/g")"
-          compose_prod exec -T -u postgres pgsql psql \
+          compose_prod exec -T pgsql psql \
             -v ON_ERROR_STOP=1 \
-            -U postgres \
-            -d postgres \
+            -U "$DB_USERNAME" \
+            -d "$DB_DATABASE" \
             -c "ALTER ROLE \"$DB_USERNAME\" WITH PASSWORD '$DB_PASSWORD_ESCAPED';"
 
           compose_prod up -d app
@@ -335,8 +336,8 @@ jobs:
             if [ "$attempt" -eq "$max_attempts" ]; then
               echo "Smoke test failed after $max_attempts attempts"
               echo "--- curl diagnostics ---"
-              curl -v --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" 2>&1 || true
-              curl -v --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"  2>&1 || true
+              curl -v --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" 2>&1 || true
+              curl -v --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"  2>&1 || true
               echo "--- compose status ---"
               compose_prod ps
               compose_prod logs --tail=80 app nginx

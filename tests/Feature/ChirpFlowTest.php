@@ -2,7 +2,9 @@
 
 use App\Models\Chirp;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
+uses(RefreshDatabase::class);
 test('guests cannot create chirps', function (): void {
     /** @var \Tests\TestCase $this */
     $response = $this->post('/chirps', [
