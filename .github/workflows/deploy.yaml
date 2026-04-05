@@ -15,8 +15,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-push:
+  test:
     if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, bcmath, intl, mbstring, zip
+          coverage: none
+
+      - name: Prepare environment
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generate app key
+        run: php artisan key:generate --ansi
+
+      - name: Run tests
+        run: composer run test
+
+      - name: Check formatting
+        run: ./vendor/bin/pint --test
+
+  build-and-push:
+    needs: [test]
+    if: github.event_name == 'push' && needs.test.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -41,6 +73,10 @@ jobs:
           NGINX_CHANGED=false
 
           if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            APP_CHANGED=true
+            NGINX_CHANGED=true
+          elif ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            # BEFORE commit is not reachable (e.g., force-push) - rebuild everything
             APP_CHANGED=true
             NGINX_CHANGED=true
           else
@@ -156,6 +192,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+
+      - name: Checkout code
+        uses: actions/checkout@v5
 
       - name: Resolve deploy image tag
         id: resolve-tag
@@ -277,6 +316,8 @@ jobs:
             echo "Smoke test failed: cannot parse host from APP_URL=$APP_URL"
             exit 1
           fi
+
+          echo "Smoke test target: https://$APP_HOST/"
 
           if ! command -v curl >/dev/null 2>&1; then
             echo "Smoke test failed: curl is required on the self-hosted runner"

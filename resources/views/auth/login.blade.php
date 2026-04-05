@@ -7,6 +7,12 @@
         <div class="hero-content flex-col">
             <div class="card w-96 bg-base-100">
                 <div class="card-body">
+                    @error('oauth')
+                        <div role="alert" class="alert alert-error mb-4">
+                            <span>{{ $message }}</span>
+                        </div>
+                    @enderror
+
                     <h1 class="text-3xl font-bold text-center mb-6">Welcome Back</h1>
 
                     <form method="POST" action="/login">
@@ -14,13 +20,11 @@
 
                         <!-- Email -->
                         <label class="floating-label mb-6">
-                            <input type="email"
-                                   name="email"
-                                   placeholder="[mail@example.com](<mailto:mail@example.com>)"
-                                   value="{{ old('email') }}"
-                                   class="input input-bordered @error('email') input-error @enderror"
-                                   required
-                                   autofocus>
+                            <input type="email" name="email"
+                                placeholder="[mail@example.com](<mailto:mail@example.com>)" value="{{ old('email') }}"
+                                class="input input-bordered @error('email')
+input-error
+@enderror" required autofocus>
                             <span>Email</span>
                         </label>
                         @error('email')
@@ -31,11 +35,8 @@
 
                         <!-- Password -->
                         <label class="floating-label mb-6">
-                            <input type="password"
-                                   name="password"
-                                   placeholder="••••••••"
-                                   class="input input-bordered @error('password') input-error @enderror"
-                                   required>
+                            <input type="password" name="password" placeholder="••••••••"
+                                class="input input-bordered @error('password') input-error @enderror" required>
                             <span>Password</span>
                         </label>
                         @error('password')
@@ -47,9 +48,7 @@
                         <!-- Remember Me -->
                         <div class="form-control mt-4">
                             <label class="label cursor-pointer justify-start">
-                                <input type="checkbox"
-                                       name="remember"
-                                       class="checkbox">
+                                <input type="checkbox" name="remember" class="checkbox">
                                 <span class="label-text ml-2">Remember me</span>
                             </label>
                         </div>
@@ -61,6 +60,19 @@
                             </button>
                         </div>
                     </form>
+
+                    <div class="divider">OR</div>
+
+                    <div class="space-y-3">
+                        <a href="{{ route('oauth.redirect', ['provider' => 'google']) }}"
+                            class="btn btn-outline btn-sm w-full">
+                            Continue with Google
+                        </a>
+                        <a href="{{ route('oauth.redirect', ['provider' => 'github']) }}"
+                            class="btn btn-outline btn-sm w-full">
+                            Continue with GitHub
+                        </a>
+                    </div>
 
                     <div class="divider">OR</div>
                     <p class="text-center text-sm">
