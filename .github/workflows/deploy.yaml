@@ -151,6 +151,12 @@ jobs:
       )
     runs-on: [self-hosted, linux, x64]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Resolve deploy image tag
         id: resolve-tag
         run: |
@@ -159,6 +165,19 @@ jobs:
           else
             echo "value=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Write production env file
+        env:
+          ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ENV_PRODUCTION}" ]; then
+            echo "ENV_PRODUCTION secret is required and must not be empty." >&2
+            exit 1
+          fi
+
+          ( umask 177 && printf '%s\n' "$ENV_PRODUCTION" > "$GITHUB_WORKSPACE/.env.production" )
 
       - name: Deploy on self-hosted runner
         env:
@@ -175,10 +194,11 @@ jobs:
 
           cleanup() {
             docker logout >/dev/null 2>&1 || true
+            rm -f "${GITHUB_WORKSPACE}/.env.production"
           }
           trap cleanup EXIT
 
-          cd ~/Chirper
+          cd "${GITHUB_WORKSPACE}"
 
           if ! command -v docker >/dev/null 2>&1; then
             echo "Deploy failed: docker command is not available on this runner"
@@ -191,12 +211,12 @@ jobs:
           fi
 
           if [ ! -f compose.prod.yaml ]; then
-            echo "Deploy failed: compose.prod.yaml not found in ~/Chirper"
+            echo "Deploy failed: compose.prod.yaml not found in ${GITHUB_WORKSPACE}"
             exit 1
           fi
 
           if [ ! -f .env.production ]; then
-            echo "Deploy failed: .env.production not found in ~/Chirper"
+            echo "Deploy failed: .env.production not found in ${GITHUB_WORKSPACE}"
             exit 1
           fi
 
@@ -218,7 +238,8 @@ jobs:
           compose_prod exec -T app php artisan migrate --pretend --no-interaction
           compose_prod exec -T app php artisan migrate --force --no-interaction
 
-          # Smoke test: verify HTTPS endpoint from APP_URL and force local resolution.
+          # Smoke test: verify endpoint from APP_URL and force local resolution.
+          # Tries HTTPS first; falls back to HTTP to support both TLS termination modes.
           APP_URL="$(grep -E '^APP_URL=' .env.production | head -n1 | cut -d'=' -f2- | tr -d '"')"
           if [ -z "$APP_URL" ]; then
             echo "Smoke test failed: APP_URL is not set in .env.production"
@@ -239,13 +260,18 @@ jobs:
           attempt=1
           max_attempts=10
           while [ "$attempt" -le "$max_attempts" ]; do
-            if curl -fsS --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/"; then
+            if curl -fsS --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" || \
+               curl -fsS --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"; then
               echo "Smoke test passed on attempt $attempt"
               break
             fi
 
             if [ "$attempt" -eq "$max_attempts" ]; then
               echo "Smoke test failed after $max_attempts attempts"
+              echo "--- curl diagnostics ---"
+              curl -v --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:443:127.0.0.1" -o /dev/null "https://$APP_HOST/" 2>&1 || true
+              curl -v --connect-timeout 5 --max-time 15 --resolve "$APP_HOST:80:127.0.0.1"  -o /dev/null "http://$APP_HOST/"  2>&1 || true
+              echo "--- compose status ---"
               compose_prod ps
               compose_prod logs --tail=80 app nginx
               compose_prod exec -T app sh -lc 'tail -n 120 storage/logs/laravel.log || true'
