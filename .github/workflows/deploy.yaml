@@ -15,8 +15,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-push:
+  test:
     if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, bcmath, intl, mbstring, zip
+          coverage: none
+
+      - name: Prepare environment
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generate app key
+        run: php artisan key:generate --ansi
+
+      - name: Run tests
+        run: composer run test
+
+      - name: Check formatting
+        run: ./vendor/bin/pint --test
+
+  build-and-push:
+    needs: [test]
+    if: github.event_name == 'push' && needs.test.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -155,6 +187,9 @@ jobs:
       )
     runs-on: [self-hosted, linux, x64]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
       - name: Resolve deploy image tag
         id: resolve-tag
         run: |
@@ -163,6 +198,26 @@ jobs:
           else
             echo "value=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Write production env file
+        env:
+          ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ENV_PRODUCTION:-}" ]; then
+            echo "Deploy failed: ENV_PRODUCTION secret is missing or empty"
+            exit 1
+          fi
+
+          printf '%s\n' "$ENV_PRODUCTION" > .env.production
+
+          if [ ! -s .env.production ]; then
+            echo "Deploy failed: generated .env.production is empty"
+            exit 1
+          fi
+
+          chmod 600 .env.production
 
       - name: Deploy on self-hosted runner
         env:
@@ -182,7 +237,7 @@ jobs:
           }
           trap cleanup EXIT
 
-          cd ~/Chirper
+          cd "$GITHUB_WORKSPACE"
 
           if ! command -v docker >/dev/null 2>&1; then
             echo "Deploy failed: docker command is not available on this runner"
@@ -195,12 +250,12 @@ jobs:
           fi
 
           if [ ! -f compose.prod.yaml ]; then
-            echo "Deploy failed: compose.prod.yaml not found in ~/Chirper"
+            echo "Deploy failed: compose.prod.yaml not found in $GITHUB_WORKSPACE"
             exit 1
           fi
 
           if [ ! -f .env.production ]; then
-            echo "Deploy failed: .env.production not found in ~/Chirper"
+            echo "Deploy failed: .env.production not found in $GITHUB_WORKSPACE"
             exit 1
           fi
 
@@ -235,6 +290,8 @@ jobs:
             exit 1
           fi
 
+          echo "Smoke test target: https://$APP_HOST/"
+
           if ! command -v curl >/dev/null 2>&1; then
             echo "Smoke test failed: curl is required on the self-hosted runner"
             exit 1
@@ -250,9 +307,11 @@ jobs:
 
             if [ "$attempt" -eq "$max_attempts" ]; then
               echo "Smoke test failed after $max_attempts attempts"
-              compose_prod ps
-              compose_prod logs --tail=80 app nginx
-              compose_prod exec -T app sh -lc 'tail -n 120 storage/logs/laravel.log || true'
+              echo "Smoke test debug: curl verbose output"
+              curl -vk --resolve "$APP_HOST:443:127.0.0.1" "https://$APP_HOST/" -o /dev/null || true
+              compose_prod ps || true
+              compose_prod logs --tail=80 app nginx || true
+              compose_prod exec -T app sh -lc 'tail -n 120 storage/logs/laravel.log || true' || true
               exit 1
             fi
 

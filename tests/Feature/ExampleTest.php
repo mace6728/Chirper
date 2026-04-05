@@ -1,7 +1,8 @@
 <?php
 
-test('the application returns a successful response', function () {
+test('the home page is accessible', function (): void {
+    /** @var \Tests\TestCase $this */
     $response = $this->get('/');
 
-    $response->assertStatus(200);
+    $response->assertSuccessful();
 });
