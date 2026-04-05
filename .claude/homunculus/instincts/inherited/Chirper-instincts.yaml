@@ -1,0 +1,383 @@
+# Instincts generated from https://github.com/mace6728/Chirper
+# Generated: 2026-04-05T07:19:02.567Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: Chirper-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: ci, feat
+
+## Evidence
+
+- 4 commits analyzed
+- Detected conventional commit pattern
+- Examples: ci: optimize selective builds and deploy flow, feat: add OAuth authentication with Google and GitHub
+
+---
+id: Chirper-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Commit Length
+
+## Action
+
+Keep commit messages concise (~46 characters)
+
+## Evidence
+
+- Average commit message length: 46 chars
+- Based on 4 commits
+
+---
+id: Chirper-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Naming Files
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: PascalCase
+
+---
+id: Chirper-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: Chirper-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: Chirper-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: Chirper-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: Chirper-workflow-ci-workflow-update
+trigger: "when doing ci workflow update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/mace6728/Chirper
+---
+
+# Chirper Workflow Ci Workflow Update
+
+## Action
+
+Follow the ci-workflow-update workflow:
+1. Edit or optimize YAML files in .github/workflows/
+2. Update Dockerfile or related deployment configuration if needed
+3. Commit changes with 'ci:' prefix in message
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: .github/workflows/deploy.yaml, .github/workflows/test.yaml, docker/app/Dockerfile.prod
+
+---
+id: chirper-instinct-file-naming
+trigger: "When creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct File Naming
+
+## Action
+
+Name the file using PascalCase (e.g., MyFile.ts)
+
+## Evidence
+
+- Pattern in namingConventions.files: PascalCase
+
+---
+id: chirper-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Function Naming
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: chirper-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Class Naming
+
+## Action
+
+Use PascalCase for class names
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: chirper-instinct-constant-naming
+trigger: "When declaring a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Constant Naming
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: chirper-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Import Style
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in importStyle: relative
+
+---
+id: chirper-instinct-export-style
+trigger: "When exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle: named
+
+---
+id: chirper-instinct-test-file-pattern
+trigger: "When creating a test file"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Test File Pattern
+
+## Action
+
+Name the file with the pattern *.test.ts
+
+## Evidence
+
+- Pattern in testing.filePattern: *.test.ts
+
+---
+id: chirper-instinct-test-type
+trigger: "When writing tests"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Test Type
+
+## Action
+
+Write unit tests
+
+## Evidence
+
+- Pattern in testing.testTypes: unit
+
+---
+id: chirper-instinct-git-commit-prefix
+trigger: "When making a commit"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Git Commit Prefix
+
+## Action
+
+Use a conventional commit prefix such as 'ci:' or 'feat:'
+
+## Evidence
+
+- Seen in commit: ci: optimize selective builds and deploy flow
+- Seen in commit: feat: add OAuth authentication with Google and GitHub
+
+---
+id: chirper-instinct-git-commit-length
+trigger: "When writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Git Commit Length
+
+## Action
+
+Keep the commit message concise, around 46 characters on average
+
+## Evidence
+
+- Pattern in commits.averageLength: 46
+
+---
+id: chirper-instinct-ci-workflow-update
+trigger: "When someone wants to modify or optimize CI/CD processes (e.g., deployment, test running)"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: mace6728/Chirper
+---
+
+# Chirper Instinct Ci Workflow Update
+
+## Action
+
+Edit or optimize YAML files in .github/workflows/, update Dockerfile or related deployment configuration if needed, and commit changes with 'ci:' prefix in message
+
+## Evidence
+
+- Workflow: ci-workflow-update
+- Files: .github/workflows/deploy.yaml, .github/workflows/test.yaml, docker/app/Dockerfile.prod
+- Commit sequence with 'ci:' prefix
+
