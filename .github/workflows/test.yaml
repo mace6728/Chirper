@@ -23,9 +23,6 @@ jobs:
           extensions: pdo, pdo_sqlite, bcmath, intl, mbstring, zip
           coverage: none
 
-      - name: Prepare environment
-        run: cp .env.example .env
-
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
