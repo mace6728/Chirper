@@ -10,7 +10,8 @@ RUN composer install \
     --prefer-dist \
     --no-interaction \
     --no-progress \
-    --no-scripts
+    --no-scripts \
+    --no-autoloader
 
 COPY app ./app
 COPY bootstrap ./bootstrap
@@ -21,12 +22,8 @@ COPY resources ./resources
 COPY routes ./routes
 COPY artisan ./artisan
 
-RUN composer install \
-    --no-dev \
-    --prefer-dist \
-    --no-interaction \
-    --no-progress \
-    --optimize-autoloader
+# Generate optimized autoloader and run post-autoload-dump scripts (e.g. artisan package:discover).
+RUN composer dump-autoload --optimize
 
 FROM php:8.4-fpm-alpine
 
