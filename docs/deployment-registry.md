@@ -8,6 +8,7 @@ Add the following repository secrets:
 
 - `DOCKER_USERNAME`: Docker Hub username
 - `DOCKER_PASSWORD`: Docker Hub access token/password
+- `ENV_PRODUCTION`: Full multiline content of production `.env.production`
 
 This deployment flow assumes the `deploy` job runs on a self-hosted runner installed on your VM.
 
@@ -40,6 +41,8 @@ cd ~/Chirper
 
 Create and configure a dedicated production env file at `~/Chirper/.env.production`.
 Set all required production variables directly in that file.
+
+If you deploy via GitHub Actions, this file is generated from the `ENV_PRODUCTION` secret at runtime.
 
 For manual local compose commands on VM, export image coordinates first:
 
@@ -102,3 +105,4 @@ The workflow will pull that tag and redeploy.
 - TLS certs are mounted from VM `/etc/letsencrypt` to container `/etc/ssl/letsencrypt` (read-only).
 - Development Nginx uses `docker/nginx/default.conf` (HTTP only); production image uses `docker/nginx/default.prod.conf` (TLS + redirect).
 - Current setup assumes public Docker Hub repositories.
+- PostgreSQL data is persisted in the `sail-pgsql` volume. If DB credentials are changed in `ENV_PRODUCTION`, deployment now syncs the database role password before app startup.
