@@ -23,8 +23,11 @@ if [ ! -f .env.production ]; then
   exit 1
 fi
 
+# Keep compose resources (containers/networks/volumes) stable across runs.
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-chirper}"
+
 compose_prod() {
-  docker compose --env-file .env.production -f compose.prod.yaml "$@"
+  docker compose -p "$COMPOSE_PROJECT_NAME" --env-file .env.production -f compose.prod.yaml "$@"
 }
 
 if [ -n "${DOCKER_USERNAME:-}" ] && [ -n "${DOCKER_PASSWORD:-}" ]; then

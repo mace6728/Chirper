@@ -27,8 +27,11 @@ fi
 : "${DOCKER_PASSWORD:?Deploy failed: DOCKER_PASSWORD is required}"
 : "${IMAGE_TAG:?Deploy failed: IMAGE_TAG is required}"
 
+# Keep compose resources (containers/networks/volumes) stable across runs.
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-chirper}"
+
 compose_prod() {
-  docker compose --env-file .env.production -f compose.prod.yaml "$@"
+  docker compose -p "$COMPOSE_PROJECT_NAME" --env-file .env.production -f compose.prod.yaml "$@"
 }
 
 # Ensure Compose uses workflow-provided image coordinates instead of file defaults.
@@ -90,6 +93,45 @@ if ! compose_prod exec -T app sh -lc 'test -f public/build/manifest.json'; then
   echo "Ensure docker/app/Dockerfile.prod builds frontend assets (npm run build) before publishing the app image."
   exit 1
 fi
+
+if ! compose_prod exec -T nginx sh -lc 'test -f /var/www/html/public/build/manifest.json'; then
+  echo "Deploy failed: missing Vite manifest at /var/www/html/public/build/manifest.json inside nginx image"
+  echo "Ensure docker/nginx/Dockerfile.prod builds frontend assets (npm run build) before publishing the nginx image."
+  exit 1
+fi
+
+APP_ASSET_PATHS="$(compose_prod exec -T app php -r '
+$manifestPath = "public/build/manifest.json";
+$manifest = json_decode(file_get_contents($manifestPath), true);
+if (!is_array($manifest)) {
+    fwrite(STDERR, "Invalid Vite manifest in app image\n");
+    exit(1);
+}
+
+$entries = ["resources/css/app.css", "resources/js/app.js"];
+foreach ($entries as $entry) {
+    if (!isset($manifest[$entry]["file"])) {
+        fwrite(STDERR, "Missing Vite entry in app manifest: {$entry}\n");
+        exit(1);
+    }
+    echo "build/{$manifest[$entry]["file"]}\n";
+}
+')"
+
+while IFS= read -r asset_path; do
+  [ -z "$asset_path" ] && continue
+
+  if ! compose_prod exec -T app sh -lc "test -f /var/www/html/public/$asset_path"; then
+    echo "Deploy failed: app image is missing expected Vite asset /var/www/html/public/$asset_path"
+    exit 1
+  fi
+
+  if ! compose_prod exec -T nginx sh -lc "test -f /var/www/html/public/$asset_path"; then
+    echo "Deploy failed: nginx image is missing Vite asset /var/www/html/public/$asset_path"
+    echo "Ensure app and nginx images are rebuilt from the same frontend source revision."
+    exit 1
+  fi
+done <<< "$APP_ASSET_PATHS"
 
 compose_prod exec -T app php artisan migrate:status --no-interaction
 compose_prod exec -T app php artisan migrate --pretend --force --no-interaction
