@@ -17,49 +17,7 @@ concurrency:
 jobs:
   test:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: pdo, pdo_sqlite, bcmath, intl, mbstring, zip
-          coverage: none
-
-      - name: Prepare environment
-        run: |
-          if [ ! -f .env ]; then
-            {
-              echo 'APP_NAME=Chirper'
-              echo 'APP_ENV=testing'
-              echo 'APP_KEY='
-              echo 'APP_DEBUG=true'
-              echo 'APP_URL=http://localhost'
-              echo 'DB_CONNECTION=sqlite'
-              echo 'DB_DATABASE=:memory:'
-              echo 'CACHE_STORE=array'
-              echo 'SESSION_DRIVER=array'
-              echo 'QUEUE_CONNECTION=sync'
-              echo 'MAIL_MAILER=array'
-            } > .env
-          fi
-
-      - name: Install dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: Generate app key
-        run: php artisan key:generate --ansi
-
-      - name: Run tests
-        run: composer run test
-
-      - name: Check formatting
-        run: ./vendor/bin/pint --test
+    uses: ./.github/workflows/test.yaml
 
   build-and-push:
     needs: [test]
@@ -103,6 +61,8 @@ jobs:
 
                 case "$file" in
                   docs/*|README.md|*.md)
+                    ;;
+                  .github/workflows/deploy.yaml|.github/workflows/test.yaml)
                     ;;
                   docker/nginx/*)
                     NGINX_CHANGED=true
@@ -184,9 +144,9 @@ jobs:
             --tag "${DOCKER_USERNAME}/chirper-nginx:${GITHUB_SHA}" \
             "${DOCKER_USERNAME}/chirper-nginx:latest"
 
-      - name: Skip image build for docs-only changes
+      - name: Skip image build for docs/workflow-only changes
         if: steps.detect-changes.outputs.any_image_built != 'true'
-        run: echo "No deployment image changes detected; skipping image build."
+        run: echo "No deployment image changes detected (docs/workflow-only); skipping image build."
 
   deploy:
     needs: [build-and-push]
