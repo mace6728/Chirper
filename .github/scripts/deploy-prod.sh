@@ -85,6 +85,12 @@ fi
 compose_prod up -d app
 compose_prod up -d nginx
 
+if ! compose_prod exec -T app sh -lc 'test -f public/build/manifest.json'; then
+  echo "Deploy failed: missing Vite manifest at /var/www/html/public/build/manifest.json inside app image"
+  echo "Ensure docker/app/Dockerfile.prod builds frontend assets (npm run build) before publishing the app image."
+  exit 1
+fi
+
 compose_prod exec -T app php artisan migrate:status --no-interaction
 compose_prod exec -T app php artisan migrate --pretend --force --no-interaction
 compose_prod exec -T app php artisan migrate --force --no-interaction
