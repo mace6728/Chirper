@@ -71,7 +71,7 @@ jobs:
                     APP_CHANGED=true
                     NGINX_CHANGED=true
                     ;;
-                  docker/app/*|app/*|bootstrap/*|config/*|database/*|resources/*|routes/*|composer.json|composer.lock|artisan|phpunit.xml)
+                  docker/app/*|app/*|bootstrap/*|config/*|database/*|resources/*|routes/*|composer.json|composer.lock|artisan|phpunit.xml|package.json|package-lock.json|vite.config.js)
                     APP_CHANGED=true
                     ;;
                   *)
