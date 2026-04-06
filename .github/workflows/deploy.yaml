@@ -62,7 +62,7 @@ jobs:
                 case "$file" in
                   docs/*|README.md|*.md)
                     ;;
-                  .github/workflows/deploy.yaml|.github/workflows/test.yaml)
+                  .github/*)
                     ;;
                   docker/nginx/*)
                     NGINX_CHANGED=true

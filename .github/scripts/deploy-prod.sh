@@ -86,7 +86,7 @@ compose_prod up -d app
 compose_prod up -d nginx
 
 compose_prod exec -T app php artisan migrate:status --no-interaction
-compose_prod exec -T app php artisan migrate --pretend --no-interaction
+compose_prod exec -T app php artisan migrate --pretend --force --no-interaction
 compose_prod exec -T app php artisan migrate --force --no-interaction
 
 # Smoke test: verify endpoint from APP_URL and force local resolution.
