@@ -3,29 +3,22 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
 class Login extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(LoginRequest $request): RedirectResponse
     {
-        // Validate the input
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $credentials = $request->safe()->only(['email', 'password']);
 
-        // Attempt to log in
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            // Regenerate session for security
             $request->session()->regenerate();
 
-            // Redirect to intended page or home
             return redirect()->intended('/')->with('success', 'Welcome back!');
         }
 
-        // If login fails, redirect back with error
         return back()
             ->withErrors(['email' => 'The provided credentials do not match our records.'])
             ->onlyInput('email');

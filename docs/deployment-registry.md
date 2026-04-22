@@ -76,6 +76,8 @@ At minimum:
 - `SESSION_DRIVER=database`
 - `CACHE_STORE=database`
 - `APP_URL=https://sdc-cloud.me`
+- `TURNSTILE_SITE_KEY=<your-turnstile-site-key>`
+- `TURNSTILE_SECRET_KEY=<your-turnstile-secret-key>`
 
 ## 3. CI/CD behavior
 

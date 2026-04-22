@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ isset($title) ? $title . ' - Chirper' : 'Chirper' }}</title>
+    @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -33,7 +34,7 @@
 
     <footer class="footer footer-center p-5 bg-base-300 text-base-content text-xs">
         <div>
-            <p>© {{ date('Y') }} Chirper - Built with Laravel and ❤️</p>
+            <p>© {{ date('Y') }} Chirper</p>
         </div>
     </footer>
 </body>

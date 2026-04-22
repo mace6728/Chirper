@@ -1,3 +1,15 @@
+@php
+    $turnstileSiteKey = config('services.turnstile.site_key');
+    $turnstileConfigured = filled($turnstileSiteKey) && filled(config('services.turnstile.secret_key'));
+@endphp
+
+@push('head')
+    @if ($turnstileConfigured)
+        <link rel="preconnect" href="https://challenges.cloudflare.com">
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @endif
+@endpush
+
 <x-layout>
     <x-slot:title>
         Register
@@ -58,9 +70,27 @@ input-error
                             <span>Confirm Password</span>
                         </label>
 
+                        <div class="space-y-2">
+                            @if ($turnstileConfigured)
+                                <div class="cf-turnstile" data-sitekey="{{ $turnstileSiteKey }}" data-action="register"
+                                    data-theme="auto" data-size="flexible"></div>
+                            @else
+                                <div role="alert" class="alert alert-error">
+                                    <span>Security verification is unavailable. Set your Turnstile keys to enable
+                                        registration.</span>
+                                </div>
+                            @endif
+
+                            @error('cf-turnstile-response')
+                                <div class="label px-1">
+                                    <span class="label-text-alt text-error">{{ $message }}</span>
+                                </div>
+                            @enderror
+                        </div>
+
                         <!-- Submit Button -->
                         <div class="form-control mt-8">
-                            <button type="submit" class="btn btn-primary btn-sm w-full">
+                            <button type="submit" class="btn btn-primary btn-sm w-full" @disabled(!$turnstileConfigured)>
                                 Register
                             </button>
                         </div>
@@ -68,16 +98,7 @@ input-error
 
                     <div class="divider">OR</div>
 
-                    <div class="space-y-3">
-                        <a href="{{ route('oauth.redirect', ['provider' => 'google']) }}"
-                            class="btn btn-outline btn-sm w-full">
-                            Continue with Google
-                        </a>
-                        <a href="{{ route('oauth.redirect', ['provider' => 'github']) }}"
-                            class="btn btn-outline btn-sm w-full">
-                            Continue with GitHub
-                        </a>
-                    </div>
+                    <x-social-auth-buttons />
 
                     <div class="divider">OR</div>
                     <p class="text-center text-sm">
