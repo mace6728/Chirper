@@ -2,13 +2,13 @@
     <a href="{{ route('oauth.redirect', ['provider' => 'google']) }}"
         class="btn btn-outline btn-sm w-full justify-center gap-3 border-base-300 bg-base-100 hover:border-base-content/20 hover:bg-base-200">
         <svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 shrink-0">
-            <path fill="#EA4335"
+            <path fill="#4285F4"
                 d="M12 10.2v3.9h5.42c-.24 1.25-.95 2.3-2.02 3.01l3.27 2.54c1.9-1.75 2.99-4.32 2.99-7.37 0-.71-.06-1.4-.18-2.07H12Z" />
             <path fill="#34A853"
                 d="M12 22c2.7 0 4.96-.9 6.61-2.45l-3.27-2.54c-.9.61-2.06.97-3.34.97-2.57 0-4.75-1.73-5.53-4.06H3.09v2.62A9.98 9.98 0 0 0 12 22Z" />
-            <path fill="#4A90E2"
-                d="M6.47 13.92A5.97 5.97 0 0 1 6.16 12c0-.67.11-1.32.31-1.92V7.46H3.09A9.98 9.98 0 0 0 2 12c0 1.61.39 3.13 1.09 4.54l3.38-2.62Z" />
             <path fill="#FBBC05"
+                d="M6.47 13.92A5.97 5.97 0 0 1 6.16 12c0-.67.11-1.32.31-1.92V7.46H3.09A9.98 9.98 0 0 0 2 12c0 1.61.39 3.13 1.09 4.54l3.38-2.62Z" />
+            <path fill="#EA4335"
                 d="M12 6.02c1.47 0 2.79.51 3.82 1.51l2.86-2.86C16.95 3.05 14.7 2 12 2a9.98 9.98 0 0 0-8.91 5.46l3.38 2.62c.78-2.33 2.96-4.06 5.53-4.06Z" />
         </svg>
         <span>Continue with Google</span>
