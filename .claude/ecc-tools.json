@@ -2,25 +2,24 @@
   "version": "1.3",
   "schemaVersion": "1.0",
   "generatedBy": "ecc-tools",
-  "generatedAt": "2026-04-05T07:18:51.269Z",
+  "generatedAt": "2026-04-05T12:26:45.653Z",
   "repo": "https://github.com/mace6728/Chirper",
   "profiles": {
-    "requested": "security",
-    "recommended": "security",
+    "requested": "developer",
+    "recommended": "developer",
     "effective": "developer",
-    "requestedAlias": "security",
-    "recommendedAlias": "security",
+    "requestedAlias": "developer",
+    "recommendedAlias": "developer",
     "effectiveAlias": "developer"
   },
-  "requestedProfile": "security",
+  "requestedProfile": "developer",
   "profile": "developer",
-  "recommendedProfile": "security",
+  "recommendedProfile": "developer",
   "effectiveProfile": "developer",
   "tier": "free",
   "requestedComponents": [
     "repo-baseline",
-    "workflow-automation",
-    "security-audits"
+    "workflow-automation"
   ],
   "selectedComponents": [
     "repo-baseline",
@@ -29,13 +28,10 @@
   "requestedAddComponents": [],
   "requestedRemoveComponents": [],
   "blockedRemovalComponents": [],
-  "tierFilteredComponents": [
-    "security-audits"
-  ],
+  "tierFilteredComponents": [],
   "requestedRootPackages": [
     "runtime-core",
-    "workflow-pack",
-    "agentshield-pack"
+    "workflow-pack"
   ],
   "selectedRootPackages": [
     "runtime-core",
@@ -43,8 +39,7 @@
   ],
   "requestedPackages": [
     "runtime-core",
-    "workflow-pack",
-    "agentshield-pack"
+    "workflow-pack"
   ],
   "requestedAddPackages": [],
   "requestedRemovePackages": [],
@@ -57,12 +52,8 @@
     "workflow-pack"
   ],
   "blockedRemovalPackages": [],
-  "tierFilteredRootPackages": [
-    "agentshield-pack"
-  ],
-  "tierFilteredPackages": [
-    "agentshield-pack"
-  ],
+  "tierFilteredRootPackages": [],
+  "tierFilteredPackages": [],
   "conflictingPackages": [],
   "dependencyGraph": {
     "runtime-core": [],
@@ -76,8 +67,7 @@
   ],
   "requestedModules": [
     "runtime-core",
-    "workflow-pack",
-    "agentshield-pack"
+    "workflow-pack"
   ],
   "selectedModules": [
     "runtime-core",
@@ -97,8 +87,7 @@
     ".codex/agents/explorer.toml",
     ".codex/agents/reviewer.toml",
     ".codex/agents/docs-researcher.toml",
-    ".claude/homunculus/instincts/inherited/Chirper-instincts.yaml",
-    ".claude/commands/ci-workflow-update.md"
+    ".claude/homunculus/instincts/inherited/Chirper-instincts.yaml"
   ],
   "packageFiles": {
     "runtime-core": [
@@ -112,9 +101,6 @@
       ".codex/agents/reviewer.toml",
       ".codex/agents/docs-researcher.toml",
       ".claude/homunculus/instincts/inherited/Chirper-instincts.yaml"
-    ],
-    "workflow-pack": [
-      ".claude/commands/ci-workflow-update.md"
     ]
   },
   "moduleFiles": {
@@ -129,9 +115,6 @@
       ".codex/agents/reviewer.toml",
       ".codex/agents/docs-researcher.toml",
       ".claude/homunculus/instincts/inherited/Chirper-instincts.yaml"
-    ],
-    "workflow-pack": [
-      ".claude/commands/ci-workflow-update.md"
     ]
   },
   "files": [
@@ -184,26 +167,14 @@
       "moduleId": "runtime-core",
       "path": ".claude/homunculus/instincts/inherited/Chirper-instincts.yaml",
       "description": "Continuous-learning instincts derived from repository patterns."
-    },
-    {
-      "moduleId": "workflow-pack",
-      "path": ".claude/commands/ci-workflow-update.md",
-      "description": "Workflow command scaffold for ci-workflow-update."
     }
   ],
-  "workflows": [
-    {
-      "command": "ci-workflow-update",
-      "path": ".claude/commands/ci-workflow-update.md"
-    }
-  ],
+  "workflows": [],
   "adapters": {
     "claudeCode": {
       "skillPath": ".claude/skills/Chirper/SKILL.md",
       "identityPath": ".claude/identity.json",
-      "commandPaths": [
-        ".claude/commands/ci-workflow-update.md"
-      ]
+      "commandPaths": []
     },
     "codex": {
       "configPath": ".codex/config.toml",
